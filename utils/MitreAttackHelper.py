@@ -32,7 +32,7 @@ def get_enterprise_mitigations():
     return mitigations
 
 
-def get_enterprise_attack_id_from_intrusionset_id(intrusionset_id):
+def get_enterprise_attack_id_from_intrusionset_id(intrusionset_id: str):
     """
     Restituisce l'id del gruppo dato un intrusion_set id
     :param intrusionset_id: id
@@ -52,7 +52,7 @@ def get_enterprise_software():
     return software
 
 
-def get_obj_name_from_stix_id(stix_id):
+def get_obj_name_from_stix_id(stix_id: str):
     """
     Metodo per ottenere, dato uno stix_id, il nome dell'oggetto definito dall'id.
     Ad esempio, dato un intrusionset_id, restituisce il nome del gruppo
@@ -102,11 +102,3 @@ def get_all_campaigns_attributed_to_group(group_name: str = None, group_id: str 
                 res.append(elem['object'])
 
     return res
-
-
-def main():
-    # get all campaigns related to groups
-    campaigns_attributed = mitre_attack_data.get_all_campaigns_attributed_to_all_groups()
-    print(f"Campaigns attributed to groups ({len(campaigns_attributed.keys())} groups):")
-    for id, campaigns in campaigns_attributed.items():
-        print(f"* {id} - attributing to {len(campaigns)} {'campaign' if len(campaigns) == 1 else 'campaigns'}")

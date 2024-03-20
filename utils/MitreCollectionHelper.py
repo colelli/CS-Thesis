@@ -16,7 +16,7 @@ collections = {
 }
 
 
-def retreive_collections(url="https://cti-taxii.mitre.org/taxii/"):
+def retreive_collections(url: str = "https://cti-taxii.mitre.org/taxii/"):
     """
     Metodo che permette, dato un server, di ottenere le collezioni disponibili.
     :param url: URL del server da interrogare (default server TAXII)
@@ -27,7 +27,7 @@ def retreive_collections(url="https://cti-taxii.mitre.org/taxii/"):
     return api_root.collections
 
 
-def get_collection(collection_name):
+def get_collection(collection_name: str):
     """
     Metodo che permette di ottenere una collezione dato un nome.<br/>
     :param collection_name: può essere 'enterprise-attack' | 'mobile-attack' | 'ics-attack'
@@ -40,7 +40,7 @@ def get_collection(collection_name):
     return src
 
 
-def get_stix_json(domain, branch="master"):
+def get_stix_json(domain: str, branch: str = "master"):
     """
         Metodo che permette di ottenere i dati dell'ATT&CK STIX dal MITRE/CTI mediante request.
         :param domain: può essere 'enterprise-attack' | 'mobile-attack' | 'ics-attack'
@@ -53,7 +53,7 @@ def get_stix_json(domain, branch="master"):
     return stix_json
 
 
-def get_data_from_branch(domain, branch="master"):
+def get_data_from_branch(domain: str, branch: str = "master"):
     """
     Metodo che permette di ottenere i dati dell'ATT&CK STIX dal MITRE/CTI mediante request.
     :param domain: può essere 'enterprise-attack' | 'mobile-attack' | 'ics-attack'
@@ -75,13 +75,13 @@ def get_attack_versions():
     return versions
 
 
-def get_data_from_version(domain, version):
+def get_data_from_version(domain: str, version: str):
     """
     Metodo che permette di ottenere i dati di una specifica versione dell'ATT&CK per
     un determinato dominio.
     :param domain: può essere 'enterprise-attack' | 'mobile-attack' | 'ics-attack'
-    :param version: MemoryStore
-    :return:
+    :param version: versione
+    :return: MemoryStore
     """
     if domain not in collections:
         raise ValueError("Dominio inserito non valido")
