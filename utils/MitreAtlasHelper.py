@@ -1,7 +1,6 @@
 import requests
 import yaml
 import ToFileUtils as tfu
-import codecs
 
 DEFAULT_ATLAS_FILE_PATH = "../files/ATLAS.yaml"
 
@@ -15,9 +14,20 @@ def parse_yaml():
     with open(DEFAULT_ATLAS_FILE_PATH) as yaml_file:
         # Parse YAML
         data = yaml.safe_load(yaml_file)
-        first_matrix = data['matrices'][0]
-        tactics = first_matrix['tactics']
-        print(tactics)
+        for i in range(len(data['matrices'])):
+            matrix = data['matrices'][i]
+            case_studies = data['case-studies'][i]
+            tfu.save_to_json_file(matrix, f"matrices_{i}")
+            tfu.save_to_json_file(case_studies, f"case_studies_{i}")
+            tfu.save_to_json_file(matrix['tactics'], f"tactics_{i}")
+            tfu.save_to_json_file(matrix['techniques'], f"techniques_{i}")
+            tfu.save_to_json_file(matrix['mitigations'], f"mitigations_{i}")
+            """
+            for j in range(len(matrix)):
+                tfu.save_to_json_file(matrix['tactics'][j], f"tactics_{i}_{j}")
+                tfu.save_to_json_file(matrix['techniques'][j], f"techniques_{i}_{j}")
+                tfu.save_to_json_file(matrix['mitigations'][j], f"mitigations_{i}_{j}")
+            """
 
 
 parse_yaml()
