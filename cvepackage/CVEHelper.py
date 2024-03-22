@@ -1,4 +1,5 @@
-from cve.cve_exceptions import CVEMalformedError, CVEMandatoryError, CVEMissingData
+from cvepackage.cve_exceptions import CVEMalformedError, CVEMandatoryError, CVEMissingData
+import utils.ToFileUtils as tfu
 
 
 class CVE(object):
@@ -30,7 +31,7 @@ class CVE(object):
         Raises:
             CVEMalformedError: if data is not in expected format
         """
-        if self.cve_json == "":
+        if self.cve_json == "" or len(self.cve_json.keys()) == 0:
             raise CVEMalformedError("Malformed CVE-json data, json is empty")
         # check for mandatory fields before assignment
         self.check_mandatory()
@@ -59,7 +60,7 @@ class CVE(object):
         """
         cvss_data = self.try_get_v31_cvss_data()
         if len(cvss_data) == 0:
-            raise CVEMissingData("Requested cvss data is missing, metrics dict does not contain v3.1 data")
+            raise CVEMissingData("Requested cvsspackage data is missing, metrics dict does not contain v3.1 data")
         return cvss_data['vectorString']
 
     def get_cvss_base_score(self):
@@ -69,7 +70,7 @@ class CVE(object):
         """
         cvss_data = self.try_get_v31_cvss_data()
         if len(cvss_data) == 0:
-            raise CVEMissingData("Requested cvss data is missing, metrics dict does not contain v3.1 data")
+            raise CVEMissingData("Requested cvsspackage data is missing, metrics dict does not contain v3.1 data")
         return cvss_data['baseScore']
 
     def get_cvss_severity(self):
@@ -79,7 +80,7 @@ class CVE(object):
         """
         cvss_data = self.try_get_v31_cvss_data()
         if len(cvss_data) == 0:
-            raise CVEMissingData("Requested cvss data is missing, metrics dict does not contain v3.1 data")
+            raise CVEMissingData("Requested cvsspackage data is missing, metrics dict does not contain v3.1 data")
         return cvss_data['baseSeverity']
 
     def get_exploitability_score(self, vers: float = 3.1):
@@ -92,17 +93,17 @@ class CVE(object):
         """
         if vers == 3.1:
             if 'cvssMetricV31' not in self.metrics.keys():
-                raise CVEMissingData("Requested cvss data is missing, metrics dict does not contain v3.1 data")
+                raise CVEMissingData("Requested cvsspackage data is missing, metrics dict does not contain v3.1 data")
             cvss_v31_metrics = self.metrics['cvssMetricV31'][0]
             if 'exploitabilityScore' not in cvss_v31_metrics.keys():
-                raise CVEMissingData("Requested cvss data is missing, metrics dict does not contain exploitability score")
+                raise CVEMissingData("Requested cvsspackage data is missing, metrics dict does not contain exploitability score")
             return cvss_v31_metrics['exploitabilityScore']
         elif vers == 2.0:
             if 'cvssMetricV2' not in self.metrics.keys():
-                raise CVEMissingData("Requested cvss data is missing, metrics dict does not contain v2.0 data")
+                raise CVEMissingData("Requested cvsspackage data is missing, metrics dict does not contain v2.0 data")
             cvss_v2_metrics = self.metrics['cvssMetricV2'][0]
             if 'exploitabilityScore' not in cvss_v2_metrics.keys():
-                raise CVEMissingData("Requested cvss data is missing, metrics dict does not contain exploitability score")
+                raise CVEMissingData("Requested cvsspackage data is missing, metrics dict does not contain exploitability score")
             return cvss_v2_metrics['exploitabilityScore']
         else:
             raise CVEMalformedError("Requested version is not supported")
@@ -118,3 +119,15 @@ class CVE(object):
             raise CVEMandatoryError("Missing mandatory 'format', 'vulnerability' or 'cve' field(s) from CVE-json data")
         if not {'id', 'descriptions'}.issubset(((self.cve_json['vulnerabilities'][0])['cve']).keys()):
             raise CVEMandatoryError("Missing mandatory 'id' or 'descriptions' field(s) from CVE-json data")
+
+    def print_full_report_to_json(self, filename: str = None, filepath: str = "./files/"):
+        """
+        Desc:
+            Prints the entire CVE-json report to a file for quick access and inspection.
+        Args:
+            filename: the name of the file
+            filepath: the destination filepath/folder
+        """
+        if not filename:
+            filename = f"full_{self.cve_id}_report"
+        tfu.save_to_json_file(self.cve_json, filename, filepath)
