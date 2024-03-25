@@ -83,7 +83,7 @@ class CVSSv31Tov4(object):
                                    f"VA:{v4_metrics['VA']}/SC:{v4_metrics['SC']}/SI:{v4_metrics['SI']}/"
                                    f"SA:{v4_metrics['SA']}")
 
-    def get_original_v31_vector(self) -> str:
+    def get_original_v31_vector(self) -> CVSS3:
         """
         :returns: The original v3.1 vector from which the v4.0 has been estimated
         """
