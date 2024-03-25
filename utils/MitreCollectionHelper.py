@@ -1,13 +1,12 @@
 import requests
+import git
 import re
 from stix2 import TAXIICollectionSource, MemoryStore, parse
 from taxii2client.v20 import Collection, Server  # only specify v20 if your installed version is >= 2.0.0
 
-
 ENTERPRISE_ATTACK = 'enterprise-attack'
 MOBILE_ATTACK = 'mobile-attack'
 ICS_ATTACK = 'ics-attack'
-
 
 collections = {
     ENTERPRISE_ATTACK: "95ecc380-afe9-11e4-9b6c-751b66dd541e",
@@ -37,6 +36,7 @@ def get_collection(collection_name: str):
         raise ValueError("Dominio inserito non valido")
     collection = Collection(f"https://cti-taxii.mitre.org/stix/collections/{collections[collection_name]}/")
     src = TAXIICollectionSource(collection)
+    print(src.all_versions("course-of-action--00d7d21b-69d6-4797-88a2-c86f3fc97651"))
     return src
 
 
@@ -88,3 +88,6 @@ def get_data_from_version(domain: str, version: str):
     stix_json = requests.get(
         f"https://raw.githubusercontent.com/mitre/cti/ATT%26CK-v{version}/{domain}/{domain}.json").json()
     return MemoryStore(stix_data=stix_json["objects"])
+
+
+get_collection(ENTERPRISE_ATTACK)

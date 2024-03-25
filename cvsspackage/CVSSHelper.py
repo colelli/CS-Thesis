@@ -83,25 +83,25 @@ class CVSSv31Tov4(object):
                                    f"VA:{v4_metrics['VA']}/SC:{v4_metrics['SC']}/SI:{v4_metrics['SI']}/"
                                    f"SA:{v4_metrics['SA']}")
 
-    def get_original_v31_vector(self):
+    def get_original_v31_vector(self) -> str:
         """
         :returns: The original v3.1 vector from which the v4.0 has been estimated
         """
         return self.__originalV31
 
-    def get_cvss4_low_estimate(self):
+    def get_cvss4_low_estimate(self) -> str:
         """
         :returns: The lowest estimated CVSS4
         """
         return self.__vectorV4_le
 
-    def get_cvss4_high_estimate(self):
+    def get_cvss4_high_estimate(self) -> str:
         """
         :returns: The highest estimated CVSS4
         """
         return self.__vectorV4_he
 
-    def __compute_estimated_base_score(self):
+    def __compute_estimated_base_score(self) -> float:
         return (self.__vectorV4_le.base_score + self.__vectorV4_he.base_score) / 2
 
     def __compute_estimated_severity(self):

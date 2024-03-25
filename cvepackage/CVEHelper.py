@@ -2,10 +2,58 @@ from cvepackage.cve_exceptions import CVEMalformedError, CVEMandatoryError, CVEM
 import utils.ToFileUtils as tfu
 
 
+def _try_get_v31_cvss_metric(metrics: dict) -> dict:
+    """
+    :returns: a cvss metric dict if any is available
+    :raises CVEMissingData if the requested data is not available
+    """
+    if len(metrics) > 0 and 'cvssMetricV31' in metrics.keys():
+        return metrics['cvssMetricV31'][0]
+    else:
+        raise CVEMissingData("Requested cvss metric is missing, metrics dict does not contain v31 metrics")
+
+
+def _try_get_v2_cvss_metric(metrics: dict) -> dict:
+    """
+    :returns: a cvss metric dict if any is available
+    :raises CVEMissingData if the requested data is not available
+    """
+    if len(metrics) > 0 and 'cvssMetricV2' in metrics.keys():
+        return metrics['cvssMetricV2'][0]
+    else:
+        raise CVEMissingData("Requested cvss metric is missing, metrics dict does not contain v2 metrics")
+
+
+def _try_get_v31_cvss_data(metrics: dict) -> dict:
+    """
+    :returns: a cvssData dict if any v3.1 metrics are available
+    :raises CVEMissingData if the requested data is not available
+    """
+    if len(metrics) > 0 and 'cvssMetricV31' in metrics.keys():
+        return (metrics['cvssMetricV31'][0])['cvssData']
+    else:
+        raise CVEMissingData("Requested cvss data is missing, metrics dict does not contain v3.1 data")
+
+
+def _try_get_v2_cvss_data(metrics: dict) -> dict:
+    """
+    :returns: a cvssData dict if any v2 metrics are available
+    :raises CVEMissingData if the requested data is not available
+    """
+    cvss_metric = _try_get_v2_cvss_metric(metrics)
+    if 'cvssData' in cvss_metric.keys():
+        return cvss_metric['cvssData']
+    else:
+        raise CVEMissingData("Requested cvss data is missing, metrics dict does not contain v2 data")
+
+
 class CVE(object):
     """
     Class to hold CVE data, parsed values, scores and information available through the NVD-NIST API.
     """
+
+    __supported_vers = {3.1: [_try_get_v31_cvss_metric, _try_get_v31_cvss_data],
+                        2.0: [_try_get_v2_cvss_metric, _try_get_v2_cvss_data]}
 
     def __init__(self, cve_json: dict):
         """
@@ -46,44 +94,59 @@ class CVE(object):
         if 'weaknesses' in cve_data.keys():
             self.weaknesses = cve_data['weaknesses']
 
-    def try_get_v31_cvss_data(self):
+    def get_cvss_vector(self, vers: float = 3.1) -> str:
         """
-        :returns: a cvssData dict if any v3.1 metrics are available
+        :param vers: chosen version in format M.m (Major.minor)
+        :returns: a CVSS vector string for the specified version if available
+        :raises CVEMalformedError: if version is not supported
+        :raises CVEMissingData: if the cvss string is missing
         """
-        if len(self.metrics) > 0 and 'cvssMetricV31' in self.metrics.keys():
-            return (self.metrics['cvssMetricV31'][0])['cvssData']
+        if vers not in self.__supported_vers.keys():
+            raise CVEMalformedError("Requested version is not supported")
 
-    def get_cvss_vector(self):
-        """
-        :returns: a CVSS vector string if available
-        :raises CVEMissingData: if vector is missing
-        """
-        cvss_data = self.try_get_v31_cvss_data()
-        if len(cvss_data) == 0:
-            raise CVEMissingData("Requested cvsspackage data is missing, metrics dict does not contain v3.1 data")
-        return cvss_data['vectorString']
+        cvss_data = self.__supported_vers[vers][1](self.metrics)
+        if 'vectorString' in cvss_data.keys():
+            return cvss_data['vectorString']
+        else:
+            raise CVEMissingData("Requested cvss string is missing")
 
-    def get_cvss_base_score(self):
+    def get_cvss_base_score(self, vers: float = 3.1) -> float:
         """
+        :param vers: chosen version in format M.m (Major.minor)
         :returns: CVSS base score if available
-        :raises CVEMissingData: if base score is missing
+        :raises CVEMalformedError: if version is not supported
+        :raises CVEMissingData: if the cvss base score is missing
         """
-        cvss_data = self.try_get_v31_cvss_data()
-        if len(cvss_data) == 0:
-            raise CVEMissingData("Requested cvsspackage data is missing, metrics dict does not contain v3.1 data")
-        return cvss_data['baseScore']
+        if vers not in self.__supported_vers.keys():
+            raise CVEMalformedError("Requested version is not supported")
 
-    def get_cvss_severity(self):
+        cvss_data = self.__supported_vers[vers][1](self.metrics)
+        if 'baseScore' in cvss_data.keys():
+            return cvss_data['baseScore']
+        else:
+            raise CVEMissingData("Requested cvss base score is missing")
+
+    def get_cvss_severity(self, vers: float = 3.1) -> float:
         """
+        :param vers: chosen version in format M.m (Major.minor)
         :returns: CVSS base severity if available
-        :raises CVEMissingData: if severity score is missing
+        :raises CVEMalformedError: if version is not supported
+        :raises CVEMissingData: if the cvss severity is missing
         """
-        cvss_data = self.try_get_v31_cvss_data()
-        if len(cvss_data) == 0:
-            raise CVEMissingData("Requested cvsspackage data is missing, metrics dict does not contain v3.1 data")
-        return cvss_data['baseSeverity']
+        if vers not in self.__supported_vers.keys():
+            raise CVEMalformedError("Requested version is not supported")
 
-    def get_exploitability_score(self, vers: float = 3.1):
+        cvss_data = self.__supported_vers[vers][1](self.metrics)
+        # exception for v2 which has basSeverity in metrics
+        if vers == 2.0:
+            cvss_data = self.__supported_vers[vers][0](self.metrics)
+
+        if 'baseSeverity' in cvss_data.keys():
+            return cvss_data['baseSeverity']
+        else:
+            raise CVEMissingData("Requested cvss severity is missing")
+
+    def get_exploitability_score(self, vers: float = 3.1) -> float:
         """
         Retrieves the CVE CVSS exploitability score based on the given CVSS version (default = 3.1)
         :param vers: chosen version in format M.m (Major.minor)
@@ -91,22 +154,14 @@ class CVE(object):
         :raises CVEMalformedError: if version is not supported
         :raises CVEMissingData: if any requested data is missing from the CVE json
         """
-        if vers == 3.1:
-            if 'cvssMetricV31' not in self.metrics.keys():
-                raise CVEMissingData("Requested cvsspackage data is missing, metrics dict does not contain v3.1 data")
-            cvss_v31_metrics = self.metrics['cvssMetricV31'][0]
-            if 'exploitabilityScore' not in cvss_v31_metrics.keys():
-                raise CVEMissingData("Requested cvsspackage data is missing, metrics dict does not contain exploitability score")
-            return cvss_v31_metrics['exploitabilityScore']
-        elif vers == 2.0:
-            if 'cvssMetricV2' not in self.metrics.keys():
-                raise CVEMissingData("Requested cvsspackage data is missing, metrics dict does not contain v2.0 data")
-            cvss_v2_metrics = self.metrics['cvssMetricV2'][0]
-            if 'exploitabilityScore' not in cvss_v2_metrics.keys():
-                raise CVEMissingData("Requested cvsspackage data is missing, metrics dict does not contain exploitability score")
-            return cvss_v2_metrics['exploitabilityScore']
-        else:
+        if vers not in self.__supported_vers.keys():
             raise CVEMalformedError("Requested version is not supported")
+
+        cvss_metric = self.__supported_vers[vers][0](self.metrics)
+        if 'exploitabilityScore' in cvss_metric:
+            return cvss_metric['exploitabilityScore']
+        else:
+            raise CVEMissingData("Requested cvss data is missing, metrics dict does not contain exploitability score")
 
     def check_mandatory(self):
         """
@@ -115,7 +170,8 @@ class CVE(object):
         Raises:
             CVEMandatoryError: if mandatory field is missing in the vector
         """
-        if not {'format', 'vulnerabilities'}.issubset(self.cve_json.keys()) or 'cve' not in self.cve_json['vulnerabilities'][0].keys():
+        if not {'format', 'vulnerabilities'}.issubset(self.cve_json.keys()) or 'cve' not in \
+                self.cve_json['vulnerabilities'][0].keys():
             raise CVEMandatoryError("Missing mandatory 'format', 'vulnerability' or 'cve' field(s) from CVE-json data")
         if not {'id', 'descriptions'}.issubset(((self.cve_json['vulnerabilities'][0])['cve']).keys()):
             raise CVEMandatoryError("Missing mandatory 'id' or 'descriptions' field(s) from CVE-json data")

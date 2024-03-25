@@ -14,6 +14,7 @@ def parse_yaml():
     with open(DEFAULT_ATLAS_FILE_PATH) as yaml_file:
         # Parse YAML
         data = yaml.safe_load(yaml_file)
+        tfu.save_to_json_file(data, "atlas-to-json")
         for i in range(len(data['matrices'])):
             matrix = data['matrices'][i]
             case_studies = data['case-studies'][i]
